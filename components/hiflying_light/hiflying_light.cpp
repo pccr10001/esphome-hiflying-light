@@ -427,11 +427,23 @@ void HiFlyingLightComponent::send_packets_(const std::vector<uint8_t> &hf_packet
   adv_params.adv_int_min = 0x20;
   adv_params.adv_int_max = 0x40;
   adv_params.adv_type = ADV_TYPE_NONCONN_IND;
-  adv_params.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
+  adv_params.own_addr_type = BLE_ADDR_TYPE_RANDOM;  // 使用隨機地址
   adv_params.channel_map = ADV_CHNL_ALL;
   adv_params.adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY;
 
   for (int count = 0; count < this->packet_count_; count++) {
+    // 每次發送前更換隨機 MAC 地址
+    esp_bd_addr_t rand_addr;
+    for (int i = 0; i < 6; i++) {
+      rand_addr[i] = esp_random() & 0xFF;
+    }
+    // 確保是有效的隨機地址 (最高位需要設置為 1)
+    rand_addr[5] |= 0xC0;
+    
+    esp_ble_gap_set_rand_addr(rand_addr);
+    ESP_LOGD(TAG, "Set random MAC: %02X:%02X:%02X:%02X:%02X:%02X", 
+             rand_addr[5], rand_addr[4], rand_addr[3], rand_addr[2], rand_addr[1], rand_addr[0]);
+    
     // 使用燈具要求的正確格式: 0201011B03 + 26字節封包
     std::vector<uint8_t> adv_data_hf;
     
@@ -452,6 +464,15 @@ void HiFlyingLightComponent::send_packets_(const std::vector<uint8_t> &hf_packet
     esp_ble_gap_start_advertising(&adv_params);
     delay(this->packet_interval_);
     esp_ble_gap_stop_advertising();
+    
+    // 更換另一個隨機 MAC 地址用於 Deli16 封包
+    for (int i = 0; i < 6; i++) {
+      rand_addr[i] = esp_random() & 0xFF;
+    }
+    rand_addr[5] |= 0xC0;
+    esp_ble_gap_set_rand_addr(rand_addr);
+    ESP_LOGD(TAG, "Set random MAC: %02X:%02X:%02X:%02X:%02X:%02X", 
+             rand_addr[5], rand_addr[4], rand_addr[3], rand_addr[2], rand_addr[1], rand_addr[0]);
     
     // 同樣處理 Deli16 封包
     std::vector<uint8_t> adv_data_deli16;
