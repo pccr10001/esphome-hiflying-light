@@ -1,0 +1,118 @@
+esphome:
+  name: hiflying-light-controller
+  platform: ESP32
+  board: esp32dev
+
+# 啟用日誌記錄
+logger:
+
+# 啟用 Home Assistant API
+api:
+  encryption:
+    key: "your-api-key-here"
+
+ota:
+  password: "your-ota-password-here"
+
+wifi:
+  ssid: "Your_WiFi_SSID"
+  password: "Your_WiFi_Password"
+
+# 啟用 ESP32 BLE Tracker (必需)
+esp32_ble_tracker:
+  scan_parameters:
+    interval: 1100ms
+    window: 1000ms
+    active: true
+
+# 可選：啟用 Bluetooth Proxy
+bluetooth_proxy:
+  active: true
+
+# 外部組件配置
+external_components:
+  - source: github://your-username/esphome-hiflying-light
+
+# HiFlying Light 控制器
+hiflying_light:
+  id: light_controller
+  instance_id: 1              # 實例編號 (1-99)，用於生成不同的 MAC 地址
+  packet_interval: 10ms       # 封包發送間隔
+  packet_count: 3             # 每次命令發送封包次數
+  counter: 1                  # 初始計數器值
+  
+  # 發送前觸發器 (可選，用於暫停其他 BLE 服務)
+  before_send:
+    - trigger_id: before_send_trigger
+  
+  # 發送後觸發器 (可選，用於恢復其他 BLE 服務)
+  after_send:
+    - trigger_id: after_send_trigger
+
+# 燈光控制 (支援亮度)
+light:
+  - platform: hiflying_light
+    hiflying_light_id: light_controller
+    name: "HiFlying 智能燈"
+    id: hiflying_lamp
+
+# 色溫燈光控制 (支援亮度 + 色溫)
+  - platform: hiflying_light
+    hiflying_light_id: light_controller
+    name: "HiFlying 色溫燈"
+    id: hiflying_color_temp_lamp
+    color_temperature: true
+
+# 配對按鈕
+button:
+  - platform: hiflying_light
+    hiflying_light_id: light_controller
+    name: "配對燈具"
+    id: pair_button
+
+# 可選：控制其他服務的開關
+switch:
+  - platform: template
+    name: "藍芽代理"
+    id: bluetooth_proxy_switch
+    turn_on_action:
+      - bluetooth_proxy.connect
+    turn_off_action:
+      - bluetooth_proxy.disconnect
+
+# 自動化範例：發送前暫停藍芽代理
+automation:
+  - trigger:
+      platform: component
+      component_id: before_send_trigger
+    then:
+      - logger.log: "準備發送 HiFlying 命令，暫停藍芽代理..."
+      - switch.turn_off: bluetooth_proxy_switch
+      
+  - trigger:
+      platform: component  
+      component_id: after_send_trigger
+    then:
+      - logger.log: "HiFlying 命令發送完成，恢復藍芽代理..."
+      - delay: 100ms
+      - switch.turn_on: bluetooth_proxy_switch
+
+# 多燈配置範例 (透過不同的 instance_id)
+# hiflying_light:
+#   - id: light_controller_1
+#     instance_id: 1
+#   - id: light_controller_2  
+#     instance_id: 2
+#   - id: light_controller_3
+#     instance_id: 3
+
+# light:
+#   - platform: hiflying_light
+#     hiflying_light_id: light_controller_1
+#     name: "客廳燈"
+#   - platform: hiflying_light
+#     hiflying_light_id: light_controller_2  
+#     name: "臥室燈"
+#   - platform: hiflying_light
+#     hiflying_light_id: light_controller_3
+#     name: "廚房燈" 
