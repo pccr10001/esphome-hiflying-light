@@ -1,13 +1,13 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.components import esp32_ble_tracker
+from esphome.core import automation
 from esphome.const import (
     CONF_ID,
     CONF_MAC_ADDRESS,
     CONF_TRIGGER_ID,
 )
 
-DEPENDENCIES = ["esp32", "esp32_ble_tracker"]
+DEPENDENCIES = ["esp32", "esp32_ble"]
 CODEOWNERS = ["@hiflying"]
 
 CONF_BEFORE_SEND = "before_send"
@@ -23,11 +23,11 @@ HiFlyingLightComponent = hiflying_light_ns.class_(
 )
 
 HiFlyingLightBeforeSendTrigger = hiflying_light_ns.class_(
-    "HiFlyingLightBeforeSendTrigger", cg.Trigger.template()
+    "HiFlyingLightBeforeSendTrigger", automation.Trigger
 )
 
 HiFlyingLightAfterSendTrigger = hiflying_light_ns.class_(
-    "HiFlyingLightAfterSendTrigger", cg.Trigger.template()
+    "HiFlyingLightAfterSendTrigger", automation.Trigger
 )
 
 CONFIG_SCHEMA = cv.Schema(

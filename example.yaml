@@ -18,12 +18,9 @@ wifi:
   ssid: "Your_WiFi_SSID"
   password: "Your_WiFi_Password"
 
-# 啟用 ESP32 BLE Tracker (必需)
-esp32_ble_tracker:
-  scan_parameters:
-    interval: 1100ms
-    window: 1000ms
-    active: true
+# 啟用 ESP32 BLE (必需)
+esp32_ble:
+  id: ble_id
 
 # 可選：啟用 Bluetooth Proxy
 bluetooth_proxy:
