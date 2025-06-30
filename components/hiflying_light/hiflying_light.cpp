@@ -29,7 +29,7 @@ void HiFlyingLightComponent::setup() {
   ESP_LOGCONFIG(TAG, "Setting up HiFlying Light...");
   
   // 初始化 preferences 用於保存 counter (每個 instance_id 有獨立的存儲)
-  uint32_t preference_hash = hash_djb2("hiflying_light") ^ (uint32_t(this->instance_id_) << 16);
+  uint32_t preference_hash = 0x12345678 ^ (uint32_t(this->instance_id_) << 16);
   this->pref_ = global_preferences->make_preference<uint16_t>(preference_hash);
   uint16_t saved_counter;
   if (this->pref_.load(&saved_counter)) {
