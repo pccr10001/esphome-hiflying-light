@@ -94,7 +94,7 @@ class HiFlyingLightOutput : public light::LightOutput {
   light::LightState *state_{nullptr};
   bool color_temperature_support_{false};
   float last_brightness_{0.0f};
-  float last_color_temp_{0.5f};
+  float last_color_temp_{300.0f};  // mired 值
 };
 
 class HiFlyingLightPairButton : public button::Button {

@@ -1,12 +1,14 @@
 #include "hiflying_light.h"
 #include "esphome/core/log.h"
 #include "esphome/core/hal.h"
+#include "esphome/core/helpers.h"
 #include "esphome/components/esp32_ble/ble.h"
 
 #ifdef USE_ESP32
 #include <esp_gap_ble_api.h>
 #include <esp_bt.h>
 #include <esp_wifi.h>
+#include <esp_random.h>
 #endif
 
 namespace esphome {
@@ -27,7 +29,7 @@ void HiFlyingLightComponent::setup() {
   ESP_LOGCONFIG(TAG, "Setting up HiFlying Light...");
   
   // 初始化 preferences 用於保存 counter (每個 instance_id 有獨立的存儲)
-  uint32_t preference_hash = this->get_object_id_hash() ^ (uint32_t(this->instance_id_) << 16) ^ 0x12345678;
+  uint32_t preference_hash = hash_djb2("hiflying_light") ^ (uint32_t(this->instance_id_) << 16);
   this->pref_ = global_preferences->make_preference<uint16_t>(preference_hash);
   uint16_t saved_counter;
   if (this->pref_.load(&saved_counter)) {
@@ -251,7 +253,7 @@ std::vector<uint8_t> HiFlyingLightComponent::generate_hf_packet_(const std::arra
   std::vector<uint8_t> packet(16);
   
   packet[0] = 0xff;
-  packet[1] = random(0, 256);  // 隨機值
+  packet[1] = esp_random() & 0xff;  // 隨機值
   packet[2] = counter & 0xff;
   packet[3] = mac[0];
   packet[4] = mac[1] & 0xf0;  // 清除低 4 位
@@ -467,7 +469,7 @@ void HiFlyingLightOutput::write_state(light::LightState *state) {
     return;
   }
 
-  float brightness, color_temp;
+  float brightness;
   state->current_values_as_brightness(&brightness);
   
   // 檢查燈是否需要開關
@@ -490,15 +492,17 @@ void HiFlyingLightOutput::write_state(light::LightState *state) {
 
   // 色溫控制
   if (this->color_temperature_support_) {
-    state->current_values_as_color_temperature(&color_temp);
-    if (abs(color_temp - this->last_color_temp_) > 0.01f) {
-      // 將 mired 值轉換為 1-1000 範圍
-      float mired = state->current_values.get_color_temperature();
-      float normalized = (mired - 153.0f) / (370.0f - 153.0f);  // 正規化到 0-1
-      normalized = 1.0f - normalized;  // 反轉 (低mired=冷光=高數值)
-      uint16_t color_temp_value = static_cast<uint16_t>(normalized * 999.0f) + 1;
-      this->parent_->set_color_temperature(color_temp_value);
-      this->last_color_temp_ = color_temp;
+    auto current_values = state->current_values;
+    if (current_values.get_color_mode() == light::ColorMode::COLOR_TEMPERATURE) {
+      float mired = current_values.get_color_temperature();
+      if (abs(mired - this->last_color_temp_) > 1.0f) {
+        // 將 mired 值轉換為 1-1000 範圍
+        float normalized = (mired - 153.0f) / (370.0f - 153.0f);  // 正規化到 0-1
+        normalized = 1.0f - normalized;  // 反轉 (低mired=冷光=高數值)
+        uint16_t color_temp_value = static_cast<uint16_t>(normalized * 999.0f) + 1;
+        this->parent_->set_color_temperature(color_temp_value);
+        this->last_color_temp_ = mired;
+      }
     }
   }
 }
