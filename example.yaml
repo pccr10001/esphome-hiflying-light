@@ -37,14 +37,6 @@ hiflying_light:
   packet_interval: 10ms       # 封包發送間隔
   packet_count: 3             # 每次命令發送封包次數
   counter: 1                  # 初始計數器值
-  
-  # 發送前觸發器 (可選，用於暫停其他 BLE 服務)
-  before_send:
-    - trigger_id: before_send_trigger
-  
-  # 發送後觸發器 (可選，用於恢復其他 BLE 服務)
-  after_send:
-    - trigger_id: after_send_trigger
 
 # 燈光控制 (支援亮度)
 light:
@@ -67,32 +59,8 @@ button:
     name: "配對燈具"
     id: pair_button
 
-# 可選：控制其他服務的開關
-switch:
-  - platform: template
-    name: "藍芽代理"
-    id: bluetooth_proxy_switch
-    turn_on_action:
-      - bluetooth_proxy.connect
-    turn_off_action:
-      - bluetooth_proxy.disconnect
-
-# 自動化範例：發送前暫停藍芽代理
-automation:
-  - trigger:
-      platform: component
-      component_id: before_send_trigger
-    then:
-      - logger.log: "準備發送 HiFlying 命令，暫停藍芽代理..."
-      - switch.turn_off: bluetooth_proxy_switch
-      
-  - trigger:
-      platform: component  
-      component_id: after_send_trigger
-    then:
-      - logger.log: "HiFlying 命令發送完成，恢復藍芽代理..."
-      - delay: 100ms
-      - switch.turn_on: bluetooth_proxy_switch
+# 注意：由於與 bluetooth_proxy 的相容性問題，
+# 建議在使用 HiFlying Light 時暫時停用其他 BLE 服務
 
 # 多燈配置範例 (透過不同的 instance_id)
 # hiflying_light:

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "esphome/core/component.h"
-#include "esphome/core/automation.h"
 #include "esphome/core/preferences.h"
 #include "esphome/components/light/light_output.h"
 #include "esphome/components/light/light_state.h"
@@ -27,24 +26,6 @@ struct CommandInfo {
   int8_t ctrl_code;
 };
 
-class HiFlyingLightComponent;
-
-class HiFlyingLightBeforeSendTrigger : public Trigger<> {
- public:
-  explicit HiFlyingLightBeforeSendTrigger(HiFlyingLightComponent *parent) : parent_(parent) {}
-
- protected:
-  HiFlyingLightComponent *parent_;
-};
-
-class HiFlyingLightAfterSendTrigger : public Trigger<> {
- public:
-  explicit HiFlyingLightAfterSendTrigger(HiFlyingLightComponent *parent) : parent_(parent) {}
-
- protected:
-  HiFlyingLightComponent *parent_;
-};
-
 class HiFlyingLightComponent : public Component {
  public:
   void setup() override;
@@ -57,13 +38,7 @@ class HiFlyingLightComponent : public Component {
   void set_packet_count(uint8_t count) { this->packet_count_ = count; }
   void set_counter(uint16_t counter) { this->counter_ = counter; }
 
-  // 觸發器管理
-  void add_before_send_trigger(HiFlyingLightBeforeSendTrigger *trigger) {
-    this->before_send_triggers_.push_back(trigger);
-  }
-  void add_after_send_trigger(HiFlyingLightAfterSendTrigger *trigger) {
-    this->after_send_triggers_.push_back(trigger);
-  }
+
 
   // 控制方法
   void send_command(HiFlyingCommand command, uint16_t param = 0);
@@ -82,9 +57,6 @@ class HiFlyingLightComponent : public Component {
   uint8_t packet_count_{3};
   uint16_t counter_{1};
 
-  std::vector<HiFlyingLightBeforeSendTrigger *> before_send_triggers_;
-  std::vector<HiFlyingLightAfterSendTrigger *> after_send_triggers_;
-  
   ESPPreferenceObject pref_;
 
   // 加密相關

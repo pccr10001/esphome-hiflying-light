@@ -86,11 +86,6 @@ void HiFlyingLightComponent::send_command(HiFlyingCommand command, uint16_t para
     return;
   }
 
-  // 觸發 before_send 事件
-  for (auto *trigger : this->before_send_triggers_) {
-    trigger->trigger();
-  }
-
   const CommandInfo &cmd_info = it->second;
   
   // 準備參數
@@ -117,11 +112,6 @@ void HiFlyingLightComponent::send_command(HiFlyingCommand command, uint16_t para
   // 遞增計數器並保存
   this->counter_++;
   this->pref_.save(&this->counter_);
-  
-  // 觸發 after_send 事件
-  for (auto *trigger : this->after_send_triggers_) {
-    trigger->trigger();
-  }
 
   ESP_LOGD(TAG, "Instance %d sent command %d with param %d (counter: %d)", 
             this->instance_id_, command, param, this->counter_ - 1);
