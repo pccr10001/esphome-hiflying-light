@@ -432,14 +432,44 @@ void HiFlyingLightComponent::send_packets_(const std::vector<uint8_t> &hf_packet
   adv_params.adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY;
 
   for (int count = 0; count < this->packet_count_; count++) {
-    // 發送 HF 封包
-    esp_ble_gap_config_adv_data_raw(const_cast<uint8_t*>(hf_packet.data()), hf_packet.size());
+    // 使用燈具要求的正確格式: 0201011B03 + 26字節封包
+    std::vector<uint8_t> adv_data_hf;
+    
+    // Flags: 02 01 01
+    adv_data_hf.push_back(0x02);  // Length
+    adv_data_hf.push_back(0x01);  // AD Type: Flags
+    adv_data_hf.push_back(0x01);  // Flags value
+    
+    // Service UUIDs: 1B 03 + data
+    adv_data_hf.push_back(0x1B);  // Length (27 bytes = 1 + 26)
+    adv_data_hf.push_back(0x03);  // AD Type: Complete List of 16-bit Service Class UUIDs
+    adv_data_hf.insert(adv_data_hf.end(), hf_packet.begin(), hf_packet.end());
+    
+    ESP_LOGD(TAG, "Sending HF packet (%d bytes): %s", adv_data_hf.size(), 
+             format_hex_pretty(adv_data_hf.data(), adv_data_hf.size()).c_str());
+    
+    esp_ble_gap_config_adv_data_raw(adv_data_hf.data(), adv_data_hf.size());
     esp_ble_gap_start_advertising(&adv_params);
     delay(this->packet_interval_);
     esp_ble_gap_stop_advertising();
     
-    // 發送 Deli16 封包
-    esp_ble_gap_config_adv_data_raw(const_cast<uint8_t*>(deli16_packet.data()), deli16_packet.size());
+    // 同樣處理 Deli16 封包
+    std::vector<uint8_t> adv_data_deli16;
+    
+    // Flags: 02 01 01
+    adv_data_deli16.push_back(0x02);  // Length
+    adv_data_deli16.push_back(0x01);  // AD Type: Flags
+    adv_data_deli16.push_back(0x01);  // Flags value
+    
+    // Service UUIDs: 1B 03 + data
+    adv_data_deli16.push_back(0x1B);  // Length (27 bytes = 1 + 26)
+    adv_data_deli16.push_back(0x03);  // AD Type: Complete List of 16-bit Service Class UUIDs
+    adv_data_deli16.insert(adv_data_deli16.end(), deli16_packet.begin(), deli16_packet.end());
+    
+    ESP_LOGD(TAG, "Sending Deli16 packet (%d bytes): %s", adv_data_deli16.size(), 
+             format_hex_pretty(adv_data_deli16.data(), adv_data_deli16.size()).c_str());
+    
+    esp_ble_gap_config_adv_data_raw(adv_data_deli16.data(), adv_data_deli16.size());
     esp_ble_gap_start_advertising(&adv_params);
     delay(this->packet_interval_);
     esp_ble_gap_stop_advertising();
